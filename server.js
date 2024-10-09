@@ -2,29 +2,26 @@ const express = require("express");
 const app = express();
 const PORT = 3000;
 
-app.get("/", (req, res) => {
-  res.send("Hello employees!");
+app.use(express.json());
+
+//logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  next();
 });
 
-const employees = require("./employees");
+//api call
+app.use("/employees", require("./api/employees"));
 
-app.get("/employees", (req, res) => {
-  res.json(employees);
+//404 error
+app.use((req, res, next) => {
+  next({ status: 404, message: "employee not found" });
 });
-
-app.get("/employees/random", (req, res) => {
-  const i = Math.floor(Math.random() * employees.length);
-  res.json(employees[i]);
-});
-
-app.get("/employees/:id", (req, res) => {
-  const { id } = req.params;
-  const employee = employees.find((e) => e.id === +id);
-  if (employee) {
-    res.json(employee);
-  } else {
-    res.status(404).send(`There is no employee with id ${id}.`);
-  }
+//other error
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status ?? 500);
+  res.json(err.message ?? "error message here");
 });
 
 app.listen(PORT, () => {
